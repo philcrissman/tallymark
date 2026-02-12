@@ -5,7 +5,8 @@ module Main where
 import Analytics.TrackHandler (handleTrack)
 import Analytics.StatsHandler (handleStats)
 
-import Amazonka (Env, newEnv, discover, overrideService, setEndpoint)
+import Amazonka (Env, newEnv, discover, configureService, setEndpoint)
+import qualified Amazonka.DynamoDB as DynamoDB
 import Data.Function ((&))
 import AWS.Lambda.Runtime (mRuntime)
 import AWS.Lambda.Events.ApiGateway.ProxyRequest (ProxyRequest(..), NoAuthorizer)
@@ -27,7 +28,8 @@ main = do
       Just ep ->
         let (host, port) = parseEndpoint ep
             useTLS = "https" `T.isPrefixOf` T.pack ep
-        in  pure $ overrideService (setEndpoint useTLS (TE.encodeUtf8 host) port) baseEnv
+            dynamo = setEndpoint useTLS (TE.encodeUtf8 host) port DynamoDB.defaultService
+        in  pure $ configureService dynamo baseEnv
   mRuntime (handler env)
 
 handler :: Env -> ProxyRequest NoAuthorizer -> IO ProxyResponse
