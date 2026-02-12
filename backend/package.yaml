@@ -1,0 +1,32 @@
+name: philcrissman-analytics
+version: 0.1.0.0
+synopsis: Simple self-hosted analytics for philcrissman.net
+
+dependencies:
+  - base >= 4.14 && < 5
+  - aeson
+  - amazonka
+  - amazonka-dynamodb
+  - bytestring
+  - case-insensitive
+  - hal
+  - lens
+  - text
+  - time
+  - unordered-containers
+  - uuid
+
+executables:
+  bootstrap:
+    main: Main.hs
+    source-dirs: src
+    other-modules:
+      - Analytics.Types
+      - Analytics.DynamoDB
+      - Analytics.TrackHandler
+      - Analytics.StatsHandler
+    ghc-options:
+      - -O2
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N

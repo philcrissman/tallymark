@@ -1,0 +1,9 @@
+{
+  "AnalyticsFunction": {
+    "TABLE_NAME": "PageViews",
+    "AWS_ACCESS_KEY_ID": "local",
+    "AWS_SECRET_ACCESS_KEY": "local",
+    "AWS_DEFAULT_REGION": "us-west-2",
+    "DYNAMODB_ENDPOINT": "http://host.docker.internal:8000"
+  }
+}
