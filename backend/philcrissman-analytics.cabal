@@ -1,0 +1,29 @@
+cabal-version:      3.0
+name:               philcrissman-analytics
+version:            0.1.0.0
+synopsis:           Simple self-hosted analytics for philcrissman.net
+build-type:         Simple
+
+executable bootstrap
+  main-is:          Main.hs
+  other-modules:    Analytics.Types
+                  , Analytics.DynamoDB
+                  , Analytics.TrackHandler
+                  , Analytics.StatsHandler
+  hs-source-dirs:   src
+  default-language:  Haskell2010
+  ghc-options:      -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:    base >= 4.14 && < 5
+                  , aeson
+                  , amazonka
+                  , amazonka-dynamodb
+                  , bytestring
+                  , case-insensitive
+                  , hal
+                  , http-types
+                  , lens
+                  , resourcet
+                  , text
+                  , time
+                  , unordered-containers
+                  , uuid

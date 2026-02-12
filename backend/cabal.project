@@ -1,0 +1,4 @@
+packages: .
+
+-- Allow amazonka-2.0 and hal which may not be in the default package set
+allow-newer: all

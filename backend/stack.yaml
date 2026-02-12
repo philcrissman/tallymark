@@ -1,0 +1,12 @@
+resolver: lts-21.25
+
+packages:
+  - .
+
+extra-deps:
+  - hal-1.1
+  - amazonka-2.0
+  - amazonka-core-2.0
+  - amazonka-dynamodb-2.0
+  - amazonka-sso-2.0
+  - amazonka-sts-2.0
