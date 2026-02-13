@@ -1,0 +1,175 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "ET Book", Georgia, "Times New Roman", serif;
+  color: #333;
+  background: #fafafa;
+  line-height: 1.5;
+}
+
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1rem;
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.total {
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 0.3rem;
+}
+
+.total-number {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.date-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-inputs label {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.date-inputs input[type="date"] {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.quick-select {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.quick-select button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.quick-select button:hover {
+  background: #eee;
+  border-color: #999;
+}
+
+.chart-container {
+  margin-bottom: 2rem;
+}
+
+.chart-container h2,
+.table-section h2 {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #555;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+}
+
+.tables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead th {
+  text-align: left;
+  font-weight: 400;
+  color: #999;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+tbody td {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.col-count {
+  text-align: right;
+  width: 60px;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-page {
+  word-break: break-all;
+}
+
+.loading {
+  text-align: center;
+  color: #999;
+  padding: 3rem;
+  font-style: italic;
+}
+
+.error {
+  text-align: center;
+  color: #c33;
+  padding: 2rem;
+  background: #fff5f5;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .tables {
+    grid-template-columns: 1fr;
+  }
+
+  .date-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

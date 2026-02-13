@@ -13,6 +13,7 @@ import GHC.Generics (Generic)
 data TrackRequest = TrackRequest
   { trUrl :: Text
   , trReferrer :: Maybe Text
+  , trSiteId :: Text
   } deriving (Show, Generic)
 
 instance FromJSON TrackRequest where
@@ -28,6 +29,7 @@ data PageView = PageView
   , pvTimestamp :: UTCTime
   , pvReferrer :: Maybe Text
   , pvUserAgent :: Maybe Text
+  , pvSiteId :: Text
   } deriving (Show, Generic)
 
 -- Stats response types
