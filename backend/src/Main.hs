@@ -21,15 +21,15 @@ main = do
   -- Initialize AWS env once on cold start; reused across warm invocations
   baseEnv <- newEnv discover
   -- Support local DynamoDB endpoint override for development
-  env <- do
-    mEndpoint <- lookupEnv "DYNAMODB_ENDPOINT"
-    case mEndpoint of
-      Nothing -> pure baseEnv
-      Just ep ->
-        let (host, port) = parseEndpoint ep
-            useTLS = "https" `T.isPrefixOf` T.pack ep
-            dynamo = setEndpoint useTLS (TE.encodeUtf8 host) port DynamoDB.defaultService
-        in  pure $ configureService dynamo baseEnv
+  mEndpoint <- lookupEnv "DYNAMODB_ENDPOINT"
+  env <- case mEndpoint of
+    Nothing -> pure baseEnv
+    Just "" -> pure baseEnv
+    Just ep ->
+      let (host, port) = parseEndpoint ep
+          useTLS = "https" `T.isPrefixOf` T.pack ep
+          dynamo = setEndpoint useTLS (TE.encodeUtf8 host) port DynamoDB.defaultService
+      in  pure $ configureService dynamo baseEnv
   mRuntime (handler env)
 
 handler :: Env -> ProxyRequest NoAuthorizer -> IO ProxyResponse

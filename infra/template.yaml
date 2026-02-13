@@ -45,6 +45,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PageViewsTable
+          DYNAMODB_ENDPOINT: ""
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PageViewsTable
