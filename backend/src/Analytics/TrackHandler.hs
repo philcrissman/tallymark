@@ -35,6 +35,7 @@ handleTrack env req = do
             , pvTimestamp = now
             , pvReferrer = trReferrer trackReq
             , pvUserAgent = userAgent
+            , pvSiteId = trSiteId trackReq
             }
       writePageView env pv
       pure

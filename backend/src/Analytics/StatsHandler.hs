@@ -21,9 +21,10 @@ handleStats env req = do
   let params = queryStringParameters req
       mStart = HM.lookup "start" params
       mEnd = HM.lookup "end" params
-  case (mStart, mEnd) of
-    (Just startDate, Just endDate) -> do
-      items <- queryByDateRange env startDate endDate
+      mSite = HM.lookup "site" params
+  case (mStart, mEnd, mSite) of
+    (Just startDate, Just endDate, Just siteId) -> do
+      items <- queryByDateRange env siteId startDate endDate
       let daily = aggregateByDay items
           topPages = aggregateByField "url" items
           topRefs = aggregateByField "referrer" items
@@ -41,7 +42,7 @@ handleStats env req = do
     _ ->
       pure
         ( addHeader "Access-Control-Allow-Origin" "*"
-        $ response status400 (applicationJson ("{\"error\":\"start and end query params required\"}" :: Text))
+        $ response status400 (applicationJson ("{\"error\":\"start, end, and site query params required\"}" :: Text))
         )
 
 -- Aggregate items by the 'date' field, producing daily counts sorted by date

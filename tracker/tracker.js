@@ -2,6 +2,7 @@
   "use strict";
 
   var endpoint = "ANALYTICS_ENDPOINT_URL/track";
+  var siteId = "ANALYTICS_SITE_ID";
 
   // Respect Do Not Track
   if (navigator.doNotTrack === "1") return;
@@ -11,7 +12,8 @@
 
   var data = JSON.stringify({
     url: window.location.pathname,
-    referrer: document.referrer || null
+    referrer: document.referrer || null,
+    siteId: siteId
   });
 
   // sendBeacon avoids CORS preflight (sends as text/plain) and survives page unload

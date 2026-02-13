@@ -18,9 +18,9 @@ Resources:
     Properties:
       StageName: prod
       Cors:
-        AllowOrigin: "'https://philcrissman.net'"
-        AllowMethods: "'GET, POST, OPTIONS'"
-        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET, POST, DELETE, OPTIONS'"
+        AllowHeaders: "'Content-Type, Authorization'"
         MaxAge: "'86400'"
 
   # --- Lambda Function ---
@@ -42,10 +42,23 @@ Resources:
             RestApiId: !Ref AnalyticsApi
             Path: /stats
             Method: GET
+        SitesList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AnalyticsApi
+            Path: /sites
+            Method: GET
+        SitesDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AnalyticsApi
+            Path: /sites
+            Method: DELETE
       Environment:
         Variables:
           TABLE_NAME: !Ref PageViewsTable
           DYNAMODB_ENDPOINT: ""
+          API_KEY: ""
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PageViewsTable

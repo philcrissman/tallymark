@@ -4,6 +4,7 @@ set -euo pipefail
 ENDPOINT="http://localhost:8000"
 TABLE="PageViews"
 REGION="us-west-2"
+SITE_ID="philcrissman.net"
 
 # Sample blog post paths
 PAGES=(
@@ -33,7 +34,15 @@ USER_AGENTS=(
   "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15"
 )
 
-echo "==> Seeding DynamoDB Local with sample page views..."
+echo "==> Seeding DynamoDB Local with sample page views for site: ${SITE_ID}..."
+
+# Write site registry entry
+aws dynamodb put-item \
+  --table-name "$TABLE" \
+  --item "{\"pk\":{\"S\":\"SITES\"},\"sk\":{\"S\":\"SITE#${SITE_ID}\"},\"siteId\":{\"S\":\"${SITE_ID}\"}}" \
+  --endpoint-url "$ENDPOINT" \
+  --region "$REGION" \
+  --no-cli-pager
 
 # Generate views spread across the last 14 days
 for day_offset in $(seq 0 13); do
@@ -58,8 +67,8 @@ for day_offset in $(seq 0 13); do
     ua_idx=$((RANDOM % ${#USER_AGENTS[@]}))
     ua="${USER_AGENTS[$ua_idx]}"
 
-    # Build the item JSON
-    item="{\"pk\":{\"S\":\"PAGE#${page}\"},\"sk\":{\"S\":\"TS#${ts}#${uuid}\"},\"url\":{\"S\":\"${page}\"},\"timestamp\":{\"S\":\"${ts}\"},\"date\":{\"S\":\"${date}\"},\"gsi1pk\":{\"S\":\"MONTH#${month}\"},\"gsi1sk\":{\"S\":\"DATE#${ts}#${uuid}\"}"
+    # Build the item JSON with site-scoped keys
+    item="{\"pk\":{\"S\":\"SITE#${SITE_ID}#PAGE#${page}\"},\"sk\":{\"S\":\"TS#${ts}#${uuid}\"},\"url\":{\"S\":\"${page}\"},\"siteId\":{\"S\":\"${SITE_ID}\"},\"timestamp\":{\"S\":\"${ts}\"},\"date\":{\"S\":\"${date}\"},\"gsi1pk\":{\"S\":\"SITE#${SITE_ID}#MONTH#${month}\"},\"gsi1sk\":{\"S\":\"DATE#${ts}#${uuid}\"}"
 
     if [ -n "$referrer" ]; then
       item="${item},\"referrer\":{\"S\":\"${referrer}\"}"
@@ -87,4 +96,4 @@ count=$(aws dynamodb scan \
   --query 'Count' \
   --output text)
 
-echo "==> Seeded $count page views."
+echo "==> Seeded $count total items (including site registry)."
