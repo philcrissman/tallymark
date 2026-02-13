@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Self-hosted analytics for philcrissman.net
 
+Parameters:
+  ApiKeyParam:
+    Type: String
+    NoEcho: true
+    Description: API key for dashboard authentication (Bearer token)
+
 Globals:
   Function:
     Timeout: 10
@@ -58,7 +64,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref PageViewsTable
           DYNAMODB_ENDPOINT: ""
-          API_KEY: ""
+          API_KEY: !Ref ApiKeyParam
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PageViewsTable

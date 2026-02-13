@@ -12,11 +12,21 @@
   <script>
     // For local dev, override with query param: ?api=http://localhost:3000
     var params = new URLSearchParams(window.location.search);
-    var apiUrl = params.get('api') || '';
+    var apiUrl = params.get('api') || 'https://9fiawrlc8a.execute-api.us-west-2.amazonaws.com/prod';
+    var savedKey = sessionStorage.getItem('analyticsApiKey') || '';
 
-    Elm.Main.init({
+    var app = Elm.Main.init({
       node: document.getElementById('app'),
-      flags: { apiUrl: apiUrl }
+      flags: { apiUrl: apiUrl, savedApiKey: savedKey }
+    });
+
+    // Listen for API key changes from Elm and persist to sessionStorage
+    app.ports.saveApiKey.subscribe(function(key) {
+      if (key) {
+        sessionStorage.setItem('analyticsApiKey', key);
+      } else {
+        sessionStorage.removeItem('analyticsApiKey');
+      }
     });
   </script>
 </body>
