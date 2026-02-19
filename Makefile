@@ -36,7 +36,7 @@ local-seed:
 local-api: build-backend
 	cd infra && sam local start-api \
 		--env-vars ../local-env.json \
-		--docker-network host \
+		--docker-network philcrissman-analytics_default \
 		--warm-containers EAGER
 
 local-test:
