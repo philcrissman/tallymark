@@ -1,8 +1,10 @@
-module Chart.Visits exposing (view)
+module Chart.Visits exposing (Hovering, init, view)
 
 import Api exposing (DailyCount)
 import Chart as C
 import Chart.Attributes as CA
+import Chart.Events as CE
+import Chart.Item as CI
 import Html exposing (Html)
 
 
@@ -11,6 +13,15 @@ type alias DataPoint =
     , y : Float
     , label : String
     }
+
+
+type alias Hovering =
+    List (CI.One DataPoint CI.Dot)
+
+
+init : Hovering
+init =
+    []
 
 
 toDataPoints : List DailyCount -> List DataPoint
@@ -25,8 +36,8 @@ toDataPoints daily =
         daily
 
 
-view : List DailyCount -> Html msg
-view daily =
+view : (Hovering -> msg) -> Hovering -> List DailyCount -> Html msg
+view onHover hovering daily =
     let
         points =
             toDataPoints daily
@@ -36,6 +47,8 @@ view daily =
         , CA.width 800
         , CA.padding { top = 10, bottom = 0, left = 0, right = 20 }
         , CA.margin { top = 10, bottom = 30, left = 40, right = 10 }
+        , CE.onMouseMove onHover (CE.getNearest CI.dots)
+        , CE.onMouseLeave (onHover [])
         ]
         [ C.yAxis []
         , C.yTicks [ CA.amount 5 ]
@@ -51,6 +64,18 @@ view daily =
                 [ CA.circle, CA.size 4, CA.color CA.blue ]
             ]
             points
+        , C.each hovering
+            (\plane dot ->
+                [ C.tooltip dot
+                    []
+                    []
+                    [ Html.text (CI.getData dot).label
+                    , Html.text ": "
+                    , Html.text (String.fromInt (round (CI.getY dot)))
+                    , Html.text " views"
+                    ]
+                ]
+            )
         ]
 
 

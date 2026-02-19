@@ -32,6 +32,7 @@ type alias Model =
     , selectedSite : Maybe String
     , stats : RemoteData StatsData
     , showSnippet : Bool
+    , hovering : Chart.Visits.Hovering
     }
 
 
@@ -60,6 +61,7 @@ type Msg
     | QuickSelect Int
     | Refresh
     | ToggleSnippet
+    | OnHover Chart.Visits.Hovering
     | NoOp
 
 
@@ -110,6 +112,7 @@ init flags =
             else
                 NotLoaded
       , showSnippet = False
+      , hovering = Chart.Visits.init
       }
     , initCmd
     )
@@ -238,6 +241,9 @@ update msg model =
 
         ToggleSnippet ->
             ( { model | showSnippet = not model.showSnippet }, Cmd.none )
+
+        OnHover hovering ->
+            ( { model | hovering = hovering }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -422,7 +428,7 @@ viewBody model =
 
         Success data ->
             div [ class "content" ]
-                [ viewChart data.daily
+                [ viewChart model data.daily
                 , div [ class "tables" ]
                     [ viewTopPages data.topPages
                     , viewTopRefs data.topRefs
@@ -430,11 +436,11 @@ viewBody model =
                 ]
 
 
-viewChart : List DailyCount -> Html Msg
-viewChart daily =
+viewChart : Model -> List DailyCount -> Html Msg
+viewChart model daily =
     div [ class "chart-container" ]
         [ h2 [] [ text "Daily Views" ]
-        , Chart.Visits.view daily
+        , Chart.Visits.view OnHover model.hovering daily
         ]
 
 
