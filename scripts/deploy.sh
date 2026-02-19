@@ -15,7 +15,7 @@ sam deploy \
   --resolve-s3
 
 echo "==> Deploying dashboard to S3..."
-aws s3 sync ../dashboard/build/ s3://analytics.philcrissman.net/ \
+aws s3 sync ../dashboard/build/ s3://philcrissman-analytics-dashboard/ \
   --delete \
   --region "$REGION"
 
