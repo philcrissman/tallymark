@@ -33,6 +33,7 @@ type alias Model =
     , stats : RemoteData StatsData
     , showSnippet : Bool
     , hovering : Chart.Visits.Hovering
+    , activePreset : Maybe Int
     }
 
 
@@ -62,6 +63,7 @@ type Msg
     | Refresh
     | ToggleSnippet
     | OnHover Chart.Visits.Hovering
+    | ShiftRange Int
     | NoOp
 
 
@@ -113,6 +115,7 @@ init flags =
                 NotLoaded
       , showSnippet = False
       , hovering = Chart.Visits.init
+      , activePreset = Just 30
       }
     , initCmd
     )
@@ -191,28 +194,31 @@ update msg model =
         StartDateChanged date ->
             case model.selectedSite of
                 Just site ->
-                    ( { model | startDate = date, stats = Loading }
+                    ( { model | startDate = date, stats = Loading, activePreset = Nothing }
                     , fetchStats model.apiUrl model.apiKey site date model.endDate GotStats
                     )
 
                 Nothing ->
-                    ( { model | startDate = date }, Cmd.none )
+                    ( { model | startDate = date, activePreset = Nothing }, Cmd.none )
 
         EndDateChanged date ->
             case model.selectedSite of
                 Just site ->
-                    ( { model | endDate = date, stats = Loading }
+                    ( { model | endDate = date, stats = Loading, activePreset = Nothing }
                     , fetchStats model.apiUrl model.apiKey site model.startDate date GotStats
                     )
 
                 Nothing ->
-                    ( { model | endDate = date }, Cmd.none )
+                    ( { model | endDate = date, activePreset = Nothing }, Cmd.none )
 
         QuickSelect days ->
             let
                 start =
                     if days == 0 then
                         "2020-01-01"
+
+                    else if days == 1 then
+                        model.today
 
                     else
                         addDays (negate days) model.today
@@ -222,12 +228,12 @@ update msg model =
             in
             case model.selectedSite of
                 Just site ->
-                    ( { model | startDate = start, endDate = end, stats = Loading }
+                    ( { model | startDate = start, endDate = end, stats = Loading, activePreset = Just days }
                     , fetchStats model.apiUrl model.apiKey site start end GotStats
                     )
 
                 Nothing ->
-                    ( { model | startDate = start, endDate = end }, Cmd.none )
+                    ( { model | startDate = start, endDate = end, activePreset = Just days }, Cmd.none )
 
         Refresh ->
             case model.selectedSite of
@@ -244,6 +250,35 @@ update msg model =
 
         OnHover hovering ->
             ( { model | hovering = hovering }, Cmd.none )
+
+        ShiftRange direction ->
+            case model.activePreset of
+                Just days ->
+                    if days == 0 then
+                        ( model, Cmd.none )
+
+                    else
+                        let
+                            shift =
+                                direction * days
+
+                            newStart =
+                                addDays shift model.startDate
+
+                            newEnd =
+                                addDays shift model.endDate
+                        in
+                        case model.selectedSite of
+                            Just site ->
+                                ( { model | startDate = newStart, endDate = newEnd, stats = Loading }
+                                , fetchStats model.apiUrl model.apiKey site newStart newEnd GotStats
+                                )
+
+                            Nothing ->
+                                ( { model | startDate = newStart, endDate = newEnd }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -405,10 +440,11 @@ viewDateControls model =
                 []
             ]
         , div [ class "quick-select" ]
-            [ button [ onClick (QuickSelect 7) ] [ text "7d" ]
-            , button [ onClick (QuickSelect 30) ] [ text "30d" ]
-            , button [ onClick (QuickSelect 90) ] [ text "90d" ]
-            , button [ onClick (QuickSelect 0) ] [ text "All" ]
+            [ presetButton model.activePreset 1 "Today"
+            , presetButton model.activePreset 7 "7d"
+            , presetButton model.activePreset 30 "30d"
+            , presetButton model.activePreset 90 "90d"
+            , presetButton model.activePreset 0 "All"
             , button [ onClick Refresh ] [ text "Refresh" ]
             ]
         ]
@@ -438,10 +474,57 @@ viewBody model =
 
 viewChart : Model -> List DailyCount -> Html Msg
 viewChart model daily =
+    let
+        showArrows =
+            case model.activePreset of
+                Just 0 ->
+                    False
+
+                Just _ ->
+                    True
+
+                Nothing ->
+                    False
+
+        forwardDisabled =
+            model.endDate >= model.today
+    in
     div [ class "chart-container" ]
         [ h2 [] [ text "Daily Views" ]
+        , if showArrows then
+            div [ class "chart-nav" ]
+                [ button [ onClick (ShiftRange -1) ] [ text "\u{2190}" ]
+                , button
+                    [ onClick (ShiftRange 1)
+                    , disabled forwardDisabled
+                    ]
+                    [ text "\u{2192}" ]
+                ]
+
+          else
+            text ""
         , Chart.Visits.view OnHover model.hovering daily
         ]
+
+
+presetButton : Maybe Int -> Int -> String -> Html Msg
+presetButton activePreset days label =
+    let
+        isActive =
+            activePreset == Just days
+
+        classes =
+            if isActive then
+                "active"
+
+            else
+                ""
+    in
+    button
+        [ onClick (QuickSelect days)
+        , class classes
+        ]
+        [ text label ]
 
 
 viewTopPages : List PageCount -> Html Msg

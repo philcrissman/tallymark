@@ -210,8 +210,43 @@ body {
   border-color: #999;
 }
 
+.quick-select button.active {
+  font-weight: 600;
+  border-color: #555;
+  color: #333;
+}
+
 .chart-container {
   margin-bottom: 2rem;
+}
+
+.chart-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.chart-nav button {
+  font-size: 1.2rem;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chart-nav button:hover:not(:disabled) {
+  background: #eee;
+  border-color: #999;
+}
+
+.chart-nav button:disabled {
+  color: #ccc;
+  border-color: #eee;
+  cursor: default;
 }
 
 .chart-container h2,
