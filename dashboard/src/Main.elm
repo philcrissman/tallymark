@@ -334,7 +334,7 @@ viewAuthForm : Model -> String -> Html Msg
 viewAuthForm model error =
     div [ class "auth-container" ]
         [ div [ class "auth-form" ]
-            [ h1 [] [ text "Analytics" ]
+            [ h1 [] [ text "Tallymark" ]
             , p [ class "auth-subtitle" ] [ text "Enter your API key to continue" ]
             , Html.form [ onSubmit SubmitApiKey ]
                 [ input
@@ -375,7 +375,7 @@ viewHeader : Model -> Html Msg
 viewHeader model =
     header [ class "header" ]
         [ div [ class "header-top" ]
-            [ h1 [] [ text "Analytics" ]
+            [ h1 [] [ text "Tallymark" ]
             , div [ class "header-actions" ]
                 [ if List.length model.sites > 1 then
                     select [ onInput SiteSelected, class "site-select" ]
@@ -600,6 +600,7 @@ viewSnippetPanel model =
                 ++ "  var siteId = \""
                 ++ siteId
                 ++ "\";\n"
+                ++ "  if (navigator.doNotTrack === \"1\") return;\n"
                 ++ "  if (document.visibilityState === \"prerender\") return;\n"
                 ++ "  var data = JSON.stringify({\n"
                 ++ "    url: window.location.pathname,\n"

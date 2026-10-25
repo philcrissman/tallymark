@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-dashboard deploy clean \
+.PHONY: build build-backend build-dashboard deploy release clean \
        local-db local-db-stop local-setup local-seed local-api local-test
 
 # --- Production ---
@@ -14,8 +14,11 @@ build-dashboard:
 deploy: build
 	./scripts/deploy.sh
 
+release: build
+	./scripts/package-release.sh
+
 clean:
-	rm -rf backend/build dashboard/build
+	rm -rf backend/build dashboard/build dist
 
 # --- Local Development ---
 
@@ -36,13 +39,14 @@ local-seed:
 local-api: build-backend
 	cd infra && sam local start-api \
 		--env-vars ../local-env.json \
-		--docker-network philcrissman-analytics_default \
+		--docker-network tallymark_default \
 		--warm-containers EAGER
 
 local-test:
 	@echo "==> POST /track"
 	curl -s -X POST http://localhost:3000/track \
-		-d '{"trUrl":"/posts/test-post/","trReferrer":"https://example.com"}' | python3 -m json.tool
+		-d '{"url":"/posts/test-post/","referrer":"https://example.com","siteId":"example.com"}' | python3 -m json.tool
 	@echo ""
 	@echo "==> GET /stats"
-	curl -s "http://localhost:3000/stats?start=2026-01-01&end=2026-12-31" | python3 -m json.tool
+	curl -s -H "Authorization: Bearer localdevkey" \
+		"http://localhost:3000/stats?site=example.com&start=2026-01-01&end=2026-12-31" | python3 -m json.tool

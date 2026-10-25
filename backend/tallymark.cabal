@@ -1,7 +1,7 @@
 cabal-version:      3.0
-name:               philcrissman-analytics
+name:               tallymark
 version:            0.1.0.0
-synopsis:           Simple self-hosted analytics for philcrissman.net
+synopsis:           Tiny, privacy-respecting, self-hosted web analytics
 build-type:         Simple
 
 executable bootstrap
