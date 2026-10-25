@@ -1,0 +1,17 @@
+# Build output
+backend/build/
+backend/dist-newstyle/
+backend/.stack-work/
+dashboard/build/
+dashboard/elm-stuff/
+dist/
+
+# Local deploy settings (contains your API key)
+tallymark.env
+
+# SAM
+infra/.aws-sam/
+infra/samconfig.toml
+
+.DS_Store
+node_modules/
