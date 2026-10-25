@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytics - philcrissman.net</title>
+  <title>Tallymark</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app"></div>
+  <!-- config.js is written by scripts/deploy.sh and sets window.TALLYMARK_API_URL -->
+  <script src="config.js"></script>
   <script src="main.js"></script>
   <script>
     // For local dev, override with query param: ?api=http://localhost:3000
     var params = new URLSearchParams(window.location.search);
-    var apiUrl = params.get('api') || 'https://9fiawrlc8a.execute-api.us-west-2.amazonaws.com/prod';
-    var savedKey = sessionStorage.getItem('analyticsApiKey') || '';
+    var apiUrl = params.get('api') || window.TALLYMARK_API_URL || '';
+    var savedKey = sessionStorage.getItem('tallymarkApiKey') || '';
 
     var app = Elm.Main.init({
       node: document.getElementById('app'),
@@ -23,9 +25,9 @@
     // Listen for API key changes from Elm and persist to sessionStorage
     app.ports.saveApiKey.subscribe(function(key) {
       if (key) {
-        sessionStorage.setItem('analyticsApiKey', key);
+        sessionStorage.setItem('tallymarkApiKey', key);
       } else {
-        sessionStorage.removeItem('analyticsApiKey');
+        sessionStorage.removeItem('tallymarkApiKey');
       }
     });
   </script>

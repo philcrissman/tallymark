@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Self-hosted analytics for philcrissman.net
+Description: Tallymark - tiny, privacy-respecting, self-hosted web analytics
 
 Parameters:
   ApiKeyParam:
@@ -11,7 +11,21 @@ Parameters:
   AllowedSitesParam:
     Type: String
     Default: ""
-    Description: Comma-separated list of allowed siteIds (e.g. "philcrissman.net,philcrissman.github.io"). Empty means no restriction.
+    Description: Comma-separated list of allowed siteIds (e.g. "example.com,blog.example.com"). Empty means no restriction.
+
+  TableNameParam:
+    Type: String
+    Default: ""
+    Description: Optional fixed DynamoDB table name. Leave empty to let CloudFormation generate one.
+
+  DashboardBucketNameParam:
+    Type: String
+    Default: ""
+    Description: Optional fixed S3 bucket name for the dashboard (must be globally unique). Leave empty to let CloudFormation generate one.
+
+Conditions:
+  HasTableName: !Not [!Equals [!Ref TableNameParam, ""]]
+  HasDashboardBucketName: !Not [!Equals [!Ref DashboardBucketNameParam, ""]]
 
 Globals:
   Function:
@@ -76,10 +90,13 @@ Resources:
             TableName: !Ref PageViewsTable
 
   # --- DynamoDB Table ---
+  # Retained on stack deletion/replacement so your data is never dropped by accident
   PageViewsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      TableName: PageViews
+      TableName: !If [HasTableName, !Ref TableNameParam, !Ref AWS::NoValue]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: pk
@@ -109,7 +126,7 @@ Resources:
   DashboardBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: philcrissman-analytics-dashboard
+      BucketName: !If [HasDashboardBucketName, !Ref DashboardBucketNameParam, !Ref AWS::NoValue]
       WebsiteConfiguration:
         IndexDocument: index.html
       PublicAccessBlockConfiguration:
@@ -136,6 +153,9 @@ Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
     Value: !Sub "https://${AnalyticsApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  DashboardBucketName:
+    Description: S3 bucket that hosts the dashboard
+    Value: !Ref DashboardBucket
   DashboardUrl:
     Description: Dashboard S3 website URL
     Value: !GetAtt DashboardBucket.WebsiteURL
