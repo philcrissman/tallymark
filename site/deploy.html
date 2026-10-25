@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deploy Tallymark</title>
+  <meta name="description" content="Step-by-step instructions for deploying Tallymark to your own AWS account, from a release bundle or from source.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+      Tallymark
+    </a>
+    <nav class="nav">
+      <a href="./#features" class="hide-sm">Features</a>
+      <a href="./#screenshots" class="hide-sm">Screenshots</a>
+      <a href="deploy.html" aria-current="page">Deploy</a>
+      <a href="https://github.com/philcrissman/tallymark">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 32 32">
+    <rect width="32" height="32" rx="7" fill="#137cb0"/>
+    <path d="M9 8v16M13.5 8v16M18 8v16M22.5 8v16" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M5.5 21.5 26.5 10.5" stroke="#bfe7fb" stroke-width="2.8" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <div class="docs">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <ol>
+        <li><a href="#overview">What gets deployed</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#aws-credentials">Set up AWS credentials</a></li>
+        <li><a href="#get-tallymark">Get Tallymark</a></li>
+        <li><a href="#configure">Configure</a></li>
+        <li><a href="#deploy">Deploy</a></li>
+        <li><a href="#add-tracker">Add the tracker</a></li>
+        <li><a href="#verify">Check that it works</a></li>
+        <li><a href="#operations">Updating and rotating keys</a></li>
+        <li><a href="#costs">What it costs</a></li>
+        <li><a href="#security">Security notes</a></li>
+        <li><a href="#uninstall">Uninstalling</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+        <li><a href="#local-dev">Local development</a></li>
+        <li><a href="#other-platforms">Other platforms</a></li>
+      </ol>
+    </nav>
+
+    <article class="doc">
+      <h1>Deploy Tallymark to AWS</h1>
+      <p>This guide takes you from nothing to a working dashboard. If you already use AWS, expect about ten minutes. If you're starting fresh, setting up credentials adds about fifteen more.</p>
+
+      <h2 id="overview">What gets deployed</h2>
+      <p>One CloudFormation stack, defined in <code>infra/template.yaml</code>, creates:</p>
+      <table>
+        <thead><tr><th>Resource</th><th>What it's for</th></tr></thead>
+        <tbody>
+          <tr><td>API Gateway (REST)</td><td>The public <code>/track</code> endpoint, plus <code>/stats</code> and <code>/sites</code>, which need your API key</td></tr>
+          <tr><td>Lambda function</td><td>The Haskell backend: a single static binary on the <code>provided.al2023</code> runtime</td></tr>
+          <tr><td>DynamoDB table</td><td>Page views, billed per request. It is kept if the stack is deleted, so you can't lose data by accident.</td></tr>
+          <tr><td>S3 bucket</td><td>Hosts the static dashboard as a website</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="prerequisites">Prerequisites</h2>
+      <p>To deploy a <strong>release bundle</strong> (recommended), you need:</p>
+      <ul>
+        <li>An <a href="https://aws.amazon.com/">AWS account</a></li>
+        <li><a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">AWS CLI v2</a></li>
+        <li><a href="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html">AWS SAM CLI</a></li>
+      </ul>
+      <p>To <strong>build from source</strong>, you also need:</p>
+      <ul>
+        <li><a href="https://www.docker.com/">Docker</a>. The backend is compiled inside a GHC/musl container, so you don't need a local Haskell toolchain.</li>
+        <li><a href="https://guide.elm-lang.org/install/elm.html">Elm 0.19.1</a>, for example via <code>npm install -g elm</code>. <a href="https://terser.org/">terser</a> is optional and used for minifying.</li>
+        <li><code>make</code> and <code>zip</code></li>
+      </ul>
+      <p>Check the tools are installed:</p>
+<pre>aws --version
+sam --version</pre>
+
+      <h2 id="aws-credentials">Set up AWS credentials</h2>
+      <p>The deploy script uses whatever credentials the AWS CLI is set up with. If <code>aws sts get-caller-identity</code> already prints your account, skip to the next step.</p>
+      <p>The simplest secure setup is IAM Identity Center (SSO):</p>
+<pre>aws configure sso
+<span class="comment"># follow the prompts, then:</span>
+export AWS_PROFILE=your-profile-name
+aws sts get-caller-identity</pre>
+      <div class="callout">
+        <p><strong>What permissions are needed?</strong> The deploying user needs to create CloudFormation stacks, IAM roles (for the Lambda function), Lambda functions, API Gateway APIs, DynamoDB tables and S3 buckets. <code>AdministratorAccess</code> on a personal account is simplest. In a shared account, ask your admin for a role covering those services.</p>
+      </div>
+
+      <h2 id="get-tallymark">Get Tallymark</h2>
+      <h3>Option A: download a release (no build needed)</h3>
+      <p>Each <a href="https://github.com/philcrissman/tallymark/releases">GitHub release</a> includes a bundle with the compiled Lambda function, the built dashboard, the template and the deploy script.</p>
+<pre>curl -LO https://github.com/philcrissman/tallymark/releases/latest/download/tallymark.tar.gz
+tar xzf tallymark.tar.gz
+cd tallymark-*</pre>
+
+      <h3>Option B: build from source</h3>
+<pre>git clone https://github.com/philcrissman/tallymark.git
+cd tallymark
+make build</pre>
+      <p><code>make build</code> compiles the backend in Docker (the first build takes 15–30 minutes while dependencies compile; later builds are quick), producing <code>backend/build/function.zip</code>. It also compiles the dashboard into <code>dashboard/build/</code>.</p>
+      <div class="callout">
+        <p><strong>Apple Silicon:</strong> the build uses <code>--platform linux/amd64</code> to produce an x86_64 Lambda binary. It works on ARM Macs through emulation, just more slowly.</p>
+      </div>
+
+      <h2 id="configure">Configure</h2>
+      <p>Copy the example settings file. <code>tallymark.env</code> is git-ignored, so your key stays out of version control.</p>
+<pre>cp tallymark.env.example tallymark.env</pre>
+      <p>Generate an API key. You'll type it into the dashboard to sign in.</p>
+<pre>openssl rand -hex 32</pre>
+      <p>Then edit <code>tallymark.env</code>:</p>
+<pre>TALLYMARK_API_KEY=paste-your-generated-key-here
+TALLYMARK_ALLOWED_SITES=example.com,blog.example.com
+TALLYMARK_STACK_NAME=tallymark
+TALLYMARK_REGION=us-east-1</pre>
+      <table>
+        <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>TALLYMARK_API_KEY</code></td><td><em>required</em></td><td>Bearer token for the dashboard and the stats API</td></tr>
+          <tr><td><code>TALLYMARK_ALLOWED_SITES</code></td><td>empty (accept all)</td><td>Comma-separated site IDs that <code>/track</code> accepts. Page views for any other site ID get a 403.</td></tr>
+          <tr><td><code>TALLYMARK_STACK_NAME</code></td><td><code>tallymark</code></td><td>CloudFormation stack name. Use a different one per deployment.</td></tr>
+          <tr><td><code>TALLYMARK_REGION</code></td><td><code>us-east-1</code></td><td>AWS region to deploy into</td></tr>
+          <tr><td><code>TALLYMARK_TABLE_NAME</code></td><td>generated</td><td>Optional fixed DynamoDB table name, for adopting an existing table</td></tr>
+          <tr><td><code>TALLYMARK_DASHBOARD_BUCKET</code></td><td>generated</td><td>Optional fixed S3 bucket name. It must be globally unique.</td></tr>
+        </tbody>
+      </table>
+      <p>A <strong>site ID</strong> is any label you like. Your domain name is the obvious choice. It's what the dashboard's site picker shows.</p>
+      <p>You can also set any of these as environment variables instead of using the file, for example in CI.</p>
+
+      <h2 id="deploy">Deploy</h2>
+<pre>./scripts/deploy.sh      <span class="comment"># release bundle, or source after `make build`</span>
+make deploy              <span class="comment"># from source: builds, then deploys</span></pre>
+      <p>The script:</p>
+      <ol class="steps">
+        <li>Runs <code>sam deploy</code> to create or update the stack. SAM makes a small bucket for deployment artifacts the first time.</li>
+        <li>Reads the stack outputs and writes your API URL into the dashboard's <code>config.js</code>.</li>
+        <li>Uploads the dashboard to the S3 bucket.</li>
+        <li>Prints your API endpoint and dashboard URL.</li>
+      </ol>
+<pre>==&gt; Deploy complete!
+
+  API endpoint:  https://a1b2c3d4e5.execute-api.us-east-1.amazonaws.com/prod
+  Dashboard:     http://tallymark-dashboardbucket-xxxx.s3-website-us-east-1.amazonaws.com</pre>
+
+      <h2 id="add-tracker">Add the tracker to your site</h2>
+      <p>Open the dashboard URL and sign in with your API key. Click <strong>Get Tracker Code</strong> and paste the snippet into every page, either in <code>&lt;head&gt;</code> or just before <code>&lt;/body&gt;</code>. The snippet looks like this:</p>
+<pre>&lt;script&gt;
+(function() {
+  "use strict";
+  var endpoint = "https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/prod/track";
+  var siteId = "example.com";
+  if (navigator.doNotTrack === "1") return;
+  if (document.visibilityState === "prerender") return;
+  var data = JSON.stringify({
+    url: window.location.pathname,
+    referrer: document.referrer || null,
+    siteId: siteId
+  });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(endpoint, data);
+  } else {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", endpoint, true);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.send(data);
+  }
+})();
+&lt;/script&gt;</pre>
+      <p>Before you have a site in the dashboard, its picker is empty. The snippet then uses <code>your-site.com</code>, so change <code>siteId</code> to one of your allowed sites. The site shows up in the dashboard after its first page view.</p>
+
+      <h3>Hugo</h3>
+      <p>Put the snippet in a partial such as <code>layouts/partials/analytics.html</code>, and wrap it so <code>hugo server</code> doesn't count your own visits:</p>
+<pre>{{ if not hugo.IsServer }}
+  &lt;script&gt; ...snippet... &lt;/script&gt;
+{{ end }}</pre>
+
+      <h3>Jekyll, Eleventy, Astro and others</h3>
+      <p>Add the snippet to your base layout. To skip local development, check the environment: <code>jekyll.environment == "production"</code> in Jekyll, <code>import.meta.env.PROD</code> in Astro, and so on.</p>
+
+      <h2 id="verify">Check that it works</h2>
+      <p>Send a test page view straight to the API:</p>
+<pre>API=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/prod
+
+curl -X POST "$API/track" \
+  -d '{"url":"/hello/","referrer":null,"siteId":"example.com"}'
+<span class="comment"># {"ok":true}</span>
+
+curl -H "Authorization: Bearer $TALLYMARK_API_KEY" \
+  "$API/stats?site=example.com&amp;start=$(date +%Y-%m-%d)&amp;end=$(date +%Y-%m-%d)"</pre>
+      <p>Refresh the dashboard and pick <strong>Today</strong>. You should see the view. Then load a page of your real site, ideally in a browser without an ad blocker, and check that it's counted too.</p>
+
+      <h2 id="operations">Updating and rotating keys</h2>
+      <h3>Update to a new version</h3>
+      <p>Download the new release (or <code>git pull &amp;&amp; make build</code>), copy over your <code>tallymark.env</code>, and run <code>./scripts/deploy.sh</code> again. Updates happen in place and your data stays put.</p>
+      <h3>Rotate the API key</h3>
+      <p>Change <code>TALLYMARK_API_KEY</code> in <code>tallymark.env</code> and redeploy. The old key stops working right away, so sign in to the dashboard again with the new one.</p>
+      <h3>Add or remove a site</h3>
+      <p>Edit <code>TALLYMARK_ALLOWED_SITES</code> and redeploy. To delete all stored data for a site:</p>
+<pre>curl -X DELETE -H "Authorization: Bearer $TALLYMARK_API_KEY" "$API/sites?site=old-site.com"</pre>
+
+      <h3>Adopting an existing deployment</h3>
+      <p>If you deployed an early version that used fixed resource names, set <code>TALLYMARK_STACK_NAME</code>, <code>TALLYMARK_TABLE_NAME</code> and <code>TALLYMARK_DASHBOARD_BUCKET</code> to your existing names. CloudFormation then updates the stack in place and doesn't replace your table.</p>
+
+      <h2 id="costs">What it costs</h2>
+      <p>Tallymark has no servers sitting idle, so you pay only for requests. Each page view is one API Gateway request, one short Lambda invocation and a few small DynamoDB writes. For a personal site with tens of thousands of page views a month, the bill is typically well under a dollar, and much of it may fall within the AWS free tier. Check the current <a href="https://aws.amazon.com/api-gateway/pricing/">API Gateway</a>, <a href="https://aws.amazon.com/lambda/pricing/">Lambda</a> and <a href="https://aws.amazon.com/dynamodb/pricing/on-demand/">DynamoDB</a> pricing for your region.</p>
+      <div class="callout">
+        <p><strong>Tip:</strong> set an <a href="https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-create.html">AWS Budget</a> alert of a few dollars a month. It's good practice for any personal AWS account.</p>
+      </div>
+
+      <h2 id="security">Security notes</h2>
+      <ul>
+        <li><strong><code>/track</code> is public by design,</strong> because browsers have to reach it. The allowlist rejects page views for unknown site IDs, but anyone who reads your snippet could still send fake views for <em>your</em> site. That's true of every client-side analytics tool.</li>
+        <li><strong>The dashboard is served over plain HTTP</strong> from the S3 website endpoint. Its calls to the API go over HTTPS, but the page itself could be tampered with on a hostile network. For HTTPS, put CloudFront (or another CDN) with a custom domain in front of the bucket.</li>
+        <li><strong>The API key is the only credential.</strong> Use a long random value, keep <code>tallymark.env</code> private, and rotate the key if it leaks. The dashboard keeps it in <code>sessionStorage</code> only, so it's cleared when the tab closes.</li>
+      </ul>
+
+      <h2 id="uninstall">Uninstalling</h2>
+<pre><span class="comment"># Empty the dashboard bucket, then delete the stack</span>
+aws s3 rm "s3://$(aws cloudformation describe-stacks --stack-name tallymark --region us-east-1 \
+  --query "Stacks[0].Outputs[?OutputKey=='DashboardBucketName'].OutputValue" --output text)" --recursive
+sam delete --stack-name tallymark --region us-east-1</pre>
+      <p>The DynamoDB table is <strong>kept on purpose</strong>. When you're sure you don't need the data, delete it in the AWS console or with <code>aws dynamodb delete-table</code>.</p>
+
+      <h2 id="troubleshooting">Troubleshooting</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>Likely cause</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard says "unauthorized"</td><td>Wrong API key, or you rotated it. The dashboard goes back to the sign-in screen, so enter the current key.</td></tr>
+          <tr><td><code>/track</code> returns 403 "unknown site"</td><td>The snippet's <code>siteId</code> isn't in <code>TALLYMARK_ALLOWED_SITES</code>. Add it and redeploy.</td></tr>
+          <tr><td>No views from your own browser</td><td>Do Not Track is on, or an ad blocker is blocking the request. Try a private window with extensions off.</td></tr>
+          <tr><td>Dashboard is blank or can't reach the API</td><td><code>config.js</code> wasn't written. Re-run <code>./scripts/deploy.sh</code>, or open the dashboard with <code>?api=https://your-api-url/prod</code>.</td></tr>
+          <tr><td><code>sam deploy</code> fails creating the bucket</td><td><code>TALLYMARK_DASHBOARD_BUCKET</code> is set to a name that's already taken globally. Clear it to get a generated name.</td></tr>
+          <tr><td>Deploy script can't find <code>function.zip</code></td><td>Run <code>make build-backend</code>, or download <code>function.zip</code> from a release into <code>backend/build/</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="local-dev">Local development</h2>
+      <p>You can run the whole stack locally with DynamoDB Local and <code>sam local</code>:</p>
+<pre>make local-setup     <span class="comment"># DynamoDB Local in Docker + create the table</span>
+make local-seed      <span class="comment"># ~70 sample page views for example.com</span>
+make local-api       <span class="comment"># build the backend and serve it on :3000</span>
+
+<span class="comment"># in another terminal</span>
+make build-dashboard
+cd dashboard/build &amp;&amp; python3 -m http.server 8080</pre>
+      <p>Open <code>http://localhost:8080/?api=http://localhost:3000</code> and sign in with <code>localdevkey</code>.</p>
+
+      <h2 id="other-platforms">Other platforms</h2>
+      <p>Tallymark runs on AWS today. The backend is a single static binary, so other platforms are possible. Two pieces are tied to AWS: the Lambda runtime adapter and the DynamoDB storage layer.</p>
+      <div class="platforms">
+        <div class="platform">
+          <h3>AWS <span class="badge ok">Supported</span></h3>
+          <p>Lambda + API Gateway + DynamoDB + S3, as described above.</p>
+        </div>
+        <div class="platform">
+          <h3>Azure <span class="badge planned">Planned</span></h3>
+          <p>Azure Functions supports <em>custom handlers</em>: any executable that serves HTTP. Porting needs an HTTP server mode for the backend and a Table Storage or Cosmos DB storage layer. The dashboard could go on Static Web Apps.</p>
+        </div>
+        <div class="platform">
+          <h3>Ubicloud &amp; plain VMs <span class="badge idea">Idea</span></h3>
+          <p>Ubicloud offers VMs, managed PostgreSQL and Kubernetes, but no Lambda-style functions. The natural fit is a long-running server with a PostgreSQL or SQLite backend, which would also work on any VPS or homelab.</p>
+        </div>
+      </div>
+      <p>Want to help with one of these? See the <a href="https://github.com/philcrissman/tallymark/issues">issue tracker</a>.</p>
+    </article>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Tallymark is free software under the <a href="https://github.com/philcrissman/tallymark/blob/main/LICENSE">AGPL-3.0</a>. Made by <a href="https://philcrissman.net">Phil Crissman</a>.</span>
+    <span><a href="./">Home</a> · <a href="https://github.com/philcrissman/tallymark">GitHub</a> · <a href="https://github.com/philcrissman/tallymark/issues">Issues</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
