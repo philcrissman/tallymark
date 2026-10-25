@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  backend:
+    name: Backend (Haskell Lambda)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/amd64
+          tags: tallymark-builder
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Package function.zip
+        run: SKIP_IMAGE_BUILD=1 ./scripts/build-backend.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend
+          path: backend/build/function.zip
+
+  dashboard:
+    name: Dashboard (Elm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Elm and terser
+        run: npm install -g elm@0.19.1-6 terser@5.31.0
+
+      - name: Build dashboard
+        run: ./scripts/build-dashboard.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dashboard
+          path: dashboard/build/
+
+  template:
+    name: Validate SAM template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install cfn-lint==1.20.0
+      - run: cfn-lint infra/template.yaml
