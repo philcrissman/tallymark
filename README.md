@@ -42,7 +42,7 @@ The tracker fires a single POST on each page load with the URL path, referrer, a
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/) (for building the Lambda binary and running DynamoDB Local)
+- A Docker runtime — [OrbStack](https://orbstack.dev/) or [Docker Desktop](https://www.docker.com/) — for building the Lambda binary and running DynamoDB Local. **It must be running** before any `make local-*` or build target.
 - [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 - [AWS CLI](https://aws.amazon.com/cli/) with configured credentials
 - [Elm](https://elm-lang.org/) 0.19.1 (`brew install elm`)
@@ -50,6 +50,15 @@ The tracker fires a single POST on each page load with the URL path, referrer, a
 ## Local Development
 
 ### 1. Start DynamoDB Local
+
+Make sure your Docker runtime is up first:
+
+```bash
+orb start           # OrbStack (or launch Docker Desktop)
+docker info         # should print server info, not a connection error
+```
+
+Then:
 
 ```bash
 make local-setup    # starts DynamoDB Local via Docker and creates the table
@@ -101,7 +110,22 @@ Open `http://localhost:8080?api=http://localhost:3000` in your browser. The loca
 
 - SAM only passes env vars declared in the template's `Environment.Variables` to the Lambda container
 - Must use `AWS::Serverless::Api` (REST API v1), **not** `HttpApi` (v2) — hal expects the v1 event format
-- Use `--docker-network philcrissman-analytics_default` so the Lambda container can reach DynamoDB Local
+- Use `--docker-network tallymark_default` so the Lambda container can reach DynamoDB Local. The network name comes from the `name: tallymark` project name in `docker-compose.yml`. If you change one, change the other.
+
+### Troubleshooting
+
+**`failed to connect to the docker API at unix:///…/.orbstack/run/docker.sock … no such file or directory`**
+(or `Cannot connect to the Docker daemon` with Docker Desktop)
+
+The Docker daemon isn't running. Start OrbStack (`orb start`, or open the app) or Docker Desktop, wait until `docker info` succeeds, then rerun `make local-setup`. To see which daemon the CLI is pointed at, run `docker context ls`. The `*` marks the active context.
+
+**Lambda can't reach DynamoDB Local under `make local-api`**
+
+Check that the Lambda and DynamoDB are on the same network: `docker network inspect tallymark_default` should list the `dynamodb-local` container. If it doesn't, run `make local-db-stop && make local-setup`.
+
+**`create-local-table.sh` prints "Table already exists" but nothing works**
+
+The script reports *any* failure that way, including DynamoDB Local not being reachable on `localhost:8000`. Check with `docker compose ps`.
 
 ## Building
 
