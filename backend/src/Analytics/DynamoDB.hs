@@ -11,8 +11,8 @@ import Analytics.Types
 
 import Amazonka (Env, send, runResourceT)
 import Amazonka.DynamoDB.PutItem (newPutItem, putItem_item)
-import Amazonka.DynamoDB.Query (newQuery, query_indexName, query_keyConditionExpression, query_expressionAttributeValues, queryResponse_items)
-import Amazonka.DynamoDB.Scan (newScan, scan_filterExpression, scan_expressionAttributeValues, scanResponse_items)
+import Amazonka.DynamoDB.Query (Query, newQuery, query_indexName, query_keyConditionExpression, query_expressionAttributeValues, query_exclusiveStartKey, queryResponse_items, queryResponse_lastEvaluatedKey)
+import Amazonka.DynamoDB.Scan (Scan, newScan, scan_filterExpression, scan_expressionAttributeValues, scan_exclusiveStartKey, scanResponse_items, scanResponse_lastEvaluatedKey)
 import Amazonka.DynamoDB.DeleteItem (newDeleteItem, deleteItem_key)
 import Amazonka.DynamoDB.Types (AttributeValue(..))
 import Control.Lens ((&), (.~), (?~), (^.))
@@ -81,8 +81,7 @@ queryMonth env table siteId startDate endDate monthKey = do
             , (":start", S ("DATE#" <> startDate <> "T00:00:00Z"))
             , (":end", S ("DATE#" <> endDate <> "T23:59:59Z~"))
             ]
-  resp <- runResourceT $ send env req
-  pure (resp ^. queryResponse_items)
+  queryAll env req
 
 -- List all known site IDs
 listSites :: Env -> IO [Text]
@@ -92,8 +91,7 @@ listSites env = do
         & query_keyConditionExpression ?~ "pk = :pk"
         & query_expressionAttributeValues ?~ HM.fromList
             [ (":pk", S "SITES") ]
-  resp <- runResourceT $ send env req
-  let items = resp ^. queryResponse_items
+  items <- queryAll env req
   pure [ sid | item <- items, Just (S sid) <- [HM.lookup "siteId" item] ]
 
 -- Delete all data for a site
@@ -108,9 +106,8 @@ deleteSiteData env siteId = do
             , (":sites", S "SITES")
             , (":siteKey", S ("SITE#" <> siteId))
             ]
-  resp <- runResourceT $ send env req
-  let items = fromMaybe [] (resp ^. scanResponse_items)
-      extractKey :: HashMap Text AttributeValue -> Maybe (HashMap Text AttributeValue)
+  items <- scanAll env req
+  let extractKey :: HashMap Text AttributeValue -> Maybe (HashMap Text AttributeValue)
       extractKey item = do
         pk <- HM.lookup "pk" item
         sk <- HM.lookup "sk" item
@@ -119,6 +116,32 @@ deleteSiteData env siteId = do
   -- Delete each item
   mapM_ (\key -> runResourceT $ send env (newDeleteItem table & deleteItem_key .~ key)) keys
   pure (length keys)
+
+-- DynamoDB returns at most 1 MB per Query/Scan call; these follow
+-- LastEvaluatedKey until every page has been read.
+queryAll :: Env -> Query -> IO [HashMap Text AttributeValue]
+queryAll env = go []
+  where
+    go acc req = do
+      resp <- runResourceT $ send env req
+      let acc' = resp ^. queryResponse_items : acc
+      case nextPageKey (resp ^. queryResponse_lastEvaluatedKey) of
+        Just key -> go acc' (req & query_exclusiveStartKey ?~ key)
+        Nothing  -> pure (concat (reverse acc'))
+
+scanAll :: Env -> Scan -> IO [HashMap Text AttributeValue]
+scanAll env = go []
+  where
+    go acc req = do
+      resp <- runResourceT $ send env req
+      let acc' = fromMaybe [] (resp ^. scanResponse_items) : acc
+      case nextPageKey (resp ^. scanResponse_lastEvaluatedKey) of
+        Just key -> go acc' (req & scan_exclusiveStartKey ?~ key)
+        Nothing  -> pure (concat (reverse acc'))
+
+nextPageKey :: Maybe (HashMap Text AttributeValue) -> Maybe (HashMap Text AttributeValue)
+nextPageKey (Just key) | not (HM.null key) = Just key
+nextPageKey _ = Nothing
 
 -- Generate list of "YYYY-MM" month keys between two dates
 monthsBetween :: Text -> Text -> [Text]

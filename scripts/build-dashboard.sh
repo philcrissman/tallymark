@@ -20,5 +20,6 @@ fi
 echo "==> Copying static assets..."
 cp index.html build/
 cp style.css build/
+cp config.js build/
 
 echo "==> Dashboard build complete: dashboard/build/"

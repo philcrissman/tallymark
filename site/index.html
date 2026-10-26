@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tallymark — tiny, private, self-hosted analytics</title>
+  <meta name="description" content="Tallymark is a tiny, privacy-respecting web analytics tool you host in your own AWS account. No cookies, no fingerprinting, just page views and referrers.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+      Tallymark
+    </a>
+    <nav class="nav">
+      <a href="#features" class="hide-sm">Features</a>
+      <a href="#screenshots" class="hide-sm">Screenshots</a>
+      <a href="deploy.html">Deploy</a>
+      <a href="https://github.com/philcrissman/tallymark">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 32 32">
+    <rect width="32" height="32" rx="7" fill="#137cb0"/>
+    <path d="M9 8v16M13.5 8v16M18 8v16M22.5 8v16" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M5.5 21.5 26.5 10.5" stroke="#bfe7fb" stroke-width="2.8" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <h1>Count your visitors, not your visitors' secrets.</h1>
+      <p class="lede">Tallymark is a tiny, open-source web analytics tool you deploy to your own AWS account in a few minutes. No cookies, no fingerprinting, no consent banner. You get page views, top pages and referrers, and nothing about who your visitors are.</p>
+      <div class="cta">
+        <a class="button primary" href="deploy.html">Deploy your own</a>
+        <a class="button" href="https://github.com/philcrissman/tallymark">View on GitHub</a>
+      </div>
+      <div class="hero-shot">
+        <img src="img/dashboard.png" width="1180" height="820" alt="The Tallymark dashboard showing 5,088 page views over 30 days, with a daily views chart that spikes near the end of September.">
+      </div>
+    </div>
+  </div>
+
+  <section id="features" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">Features</p>
+      <h2>Everything a personal site needs. Nothing it doesn't.</h2>
+      <p class="section-intro">Tallymark answers three questions — how many people came, what did they read, and where did they come from — and then gets out of the way.</p>
+
+      <div class="features">
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Private by design</h3>
+          <p>No cookies, no local storage, no IDs, no fingerprinting. The tracker sends the path and referrer, and it respects Do Not Track.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+          <h3>A 20-line tracker</h3>
+          <p>A few lines of plain JavaScript using <code>navigator.sendBeacon</code>. No dependencies, no CORS preflight, and nothing that slows your pages down.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+          <h3>Charts you'll actually read</h3>
+          <p>A daily views chart with hover details, quick ranges (today, 7, 30, 90 days, all time), and arrows to step back through history.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg></div>
+          <h3>Many sites, one deploy</h3>
+          <p>Track as many sites as you like from one deployment. An allowlist makes the endpoint reject page views for sites that aren't yours.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <h3>Costs about nothing</h3>
+          <p>Fully serverless: Lambda, API Gateway and on-demand DynamoDB. A typical personal site costs well under a dollar a month.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+          <h3>Your data, your account</h3>
+          <p>Everything runs in your AWS account. There's no third party to trust, and one API call deletes all of a site's data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenshots">
+    <div class="wrap">
+      <p class="eyebrow">Screenshots</p>
+      <h2>A quiet dashboard for a quiet tool.</h2>
+      <p class="section-intro">Built in Elm with elm-charts. Sign in with the API key you chose at deploy time, pick a site, and pick a date range.</p>
+
+      <div class="gallery">
+        <figure class="shot">
+          <div class="frame"><img src="img/chart-90d.png" width="912" height="386" loading="lazy" alt="A 90-day daily views chart with two traffic spikes and a hover tooltip reading 2026-09-28: 197 views."></div>
+          <figcaption><strong>Daily views.</strong> Hover any day for its exact count. Spikes, like a post landing on Hacker News, are easy to spot.</figcaption>
+        </figure>
+
+        <figure class="shot">
+          <div class="frame"><img src="img/top-pages.png" width="892" height="475" loading="lazy" alt="Two tables side by side: top pages led by the home page, and top referrers led by Hacker News and Google."></div>
+          <figcaption><strong>Top pages and referrers.</strong> See which posts people read and where they found them.</figcaption>
+        </figure>
+
+        <div class="shot-row">
+          <figure class="shot">
+            <div class="frame"><img src="img/tracker-code.png" width="892" height="558" loading="lazy" alt="The Tracker Code panel showing a ready-to-paste script tag with the API endpoint and site ID filled in."></div>
+            <figcaption><strong>Copy, paste, done.</strong> The dashboard generates the tracker snippet with your endpoint and site ID already filled in.</figcaption>
+          </figure>
+          <figure class="shot phone">
+            <div class="frame"><img src="img/mobile.png" width="390" height="760" loading="lazy" alt="The dashboard on a phone-sized screen."></div>
+            <figcaption><strong>Works on your phone,</strong> for checking in on a launch day.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2>One beacon, one function, one table.</h2>
+      <p class="section-intro">When a page loads, the tracker sends one small POST. A Haskell Lambda function stores it in DynamoDB. The dashboard asks the same function for totals.</p>
+<pre class="diagram">Your site ──POST /track──▶ API Gateway ──▶ Lambda (Haskell) ──▶ DynamoDB
+                                                  ▲
+Dashboard ──GET /stats, /sites (Bearer key)───────┘
+(Elm, on S3)</pre>
+      <ul class="stack-list">
+        <li><strong>Backend</strong>Haskell on AWS Lambda, using <a href="https://github.com/Nike-Inc/hal">hal</a> and amazonka</li>
+        <li><strong>Dashboard</strong><a href="https://elm-lang.org/">Elm</a> with <a href="https://github.com/terezka/elm-charts">elm-charts</a></li>
+        <li><strong>Storage</strong>DynamoDB, single table, pay per request</li>
+        <li><strong>Infra</strong>One AWS SAM template, deployed with one script</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="get-started">
+    <div class="wrap narrow">
+      <p class="eyebrow">Get started</p>
+      <h2>Up and running in about ten minutes.</h2>
+      <p>You need an AWS account, the AWS CLI and the AWS SAM CLI. Download a release so you don't have to build anything, then:</p>
+<pre><span class="comment"># 1. Download and unpack the latest release</span>
+curl -LO https://github.com/philcrissman/tallymark/releases/latest/download/tallymark.tar.gz
+tar xzf tallymark.tar.gz &amp;&amp; cd tallymark-*
+
+<span class="comment"># 2. Configure: pick an API key and list your sites</span>
+cp tallymark.env.example tallymark.env
+$EDITOR tallymark.env
+
+<span class="comment"># 3. Deploy</span>
+./scripts/deploy.sh</pre>
+      <p>The script prints your dashboard URL. Sign in with your key, click <strong>Get Tracker Code</strong>, and paste the snippet into your site.</p>
+      <p><a class="button primary" href="deploy.html">Read the full deployment guide →</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Tallymark is free software under the <a href="https://github.com/philcrissman/tallymark/blob/main/LICENSE">AGPL-3.0</a>. Made by <a href="https://philcrissman.net">Phil Crissman</a>.</span>
+    <span><a href="deploy.html">Deploy</a> · <a href="https://github.com/philcrissman/tallymark">GitHub</a> · <a href="https://github.com/philcrissman/tallymark/issues">Issues</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

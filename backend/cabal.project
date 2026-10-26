@@ -1,4 +1,5 @@
 packages: .
 
--- Allow amazonka-2.0 and hal which may not be in the default package set
-allow-newer: all
+-- GHC 9.4.4 panics compiling newer Cabal-syntax (pulled in by amazonka's custom
+-- Setup), so use the Cabal libraries that ship with the compiler.
+constraints: any.Cabal installed, any.Cabal-syntax installed

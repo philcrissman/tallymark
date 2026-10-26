@@ -359,6 +359,10 @@ tbody td {
     align-items: flex-start;
   }
 
+  .date-inputs {
+    flex-wrap: wrap;
+  }
+
   .header-top {
     flex-direction: column;
     align-items: flex-start;

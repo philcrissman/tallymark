@@ -4,17 +4,17 @@ set -euo pipefail
 ENDPOINT="http://localhost:8000"
 TABLE="PageViews"
 REGION="us-west-2"
-SITE_ID="philcrissman.net"
+SITE_ID="example.com"
 
 # Sample blog post paths
 PAGES=(
-  "/posts/fun-with-combinators/"
-  "/posts/eulers-fizzbuzz/"
-  "/now/"
   "/"
-  "/posts/fun-with-combinators/"
-  "/posts/fun-with-combinators/"
-  "/posts/eulers-fizzbuzz/"
+  "/blog/hello-world/"
+  "/blog/fun-with-combinators/"
+  "/blog/fun-with-combinators/"
+  "/blog/a-tiny-analytics-tool/"
+  "/about/"
+  "/blog/fun-with-combinators/"
 )
 
 # Sample referrers
