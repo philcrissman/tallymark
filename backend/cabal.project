@@ -1,9 +1,5 @@
 packages: .
 
--- Allow amazonka-2.0 and hal which may not be in the default package set
-allow-newer: all
-
--- Exact versions live in cabal.project.freeze (pinned to the Hackage snapshot
--- the backend was first built against). base64-1.0 was later revised to need
--- a newer base than GHC 9.4 ships, so relax that one lower bound.
-allow-older: base64:base
+-- GHC 9.4.4 panics compiling newer Cabal-syntax (pulled in by amazonka's custom
+-- Setup), so use the Cabal libraries that ship with the compiler.
+constraints: any.Cabal installed, any.Cabal-syntax installed
