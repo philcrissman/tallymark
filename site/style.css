@@ -117,6 +117,7 @@ img { max-width: 100%; height: auto; display: block; }
   max-width: 38rem;
   margin: 0 auto 2rem;
 }
+.hero .lede + .lede { margin-top: -0.75rem; }
 .cta { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 .button {
   display: inline-block;
